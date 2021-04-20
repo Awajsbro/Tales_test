@@ -1,4 +1,5 @@
 import { request, gql } from 'graphql-request'
+
 const GetData = gql`
     {
         getPeoples {
@@ -41,8 +42,8 @@ const GetData = gql`
 `
 
 const AddPeople = gql`
-    mutation addPeople($firstName: String!, $lastName: String!, $email: String!, $job: String!) {
-        addPeople(firstName: $firstName, lastName: $lastName, email: $email, job: $job) {
+    mutation addPeople($input: PeopleInput) {
+        addPeople(input: $input) {
             _id
             team {
                 _id
@@ -62,8 +63,8 @@ const AddPeople = gql`
 `
 
 const EditPeople = gql`
-    mutation editPeople($_id: String!, $firstName: String, $lastName: String, $email: String, $job: String) {
-        editPeople(_id: $_id, firstName: $firstName, lastName: $lastName, email: $email, job: $job) {
+    mutation editPeople($input: PeopleInput) {
+        editPeople(input: $input) {
             _id
             firstName
             lastName
@@ -80,7 +81,22 @@ const EditTeams = gql`
     mutation editTeams($input: [TeamInput]) {
         editTeams(input: $input) {
             _id
+            lead {
+                _id
+            }
+            worker {
+                _id
+            }
+            apprentice{
+                _id
+            }
         }
+    }
+`
+
+const DeletePeople = gql`
+    mutation deletePeople($_id: String!) {
+        deletePeople(_id: $_id)
     }
 `
 
@@ -98,13 +114,10 @@ export const sendPeopleDB = (people, teams) => {
 }
 
 const syncEditPeople = async (people, teams) => {
-    const { editPeople: editedPeople } = await request("http://localhost:4000/graphql", EditPeople, { ...people })
+    console.log(people, "avant requette")
+    const { editPeople: editedPeople } = await request("http://localhost:4000/graphql", EditPeople, { input: people })
     const indexOldTeam = teams.findIndex(team => team._id === people.team?._id)
     let indexNewTeam = teams.findIndex(team => team._id === editedPeople.team?._id)
-
-    console.log(editedPeople)
-    if (editedPeople.job === people.job && editedPeople.team?._id === people.team?._id)
-        return [editedPeople]
 
     if (indexOldTeam !== -1)
         teams[indexOldTeam] = removeInTeam(people, teams[indexOldTeam])
@@ -119,7 +132,7 @@ const syncEditPeople = async (people, teams) => {
 }
 
 const syncAddPeople = async (people, teams) => {
-    let { addPeople: addedPeople } = await request("http://localhost:4000/graphql", AddPeople, { ...people })
+    let { addPeople: addedPeople } = await request("http://localhost:4000/graphql", AddPeople, { input: people })
     const index = teams.findIndex(team => team._id === addedPeople.team?._id)
 
     addedPeople = {
@@ -134,6 +147,15 @@ const syncAddPeople = async (people, teams) => {
     else
         teams[index] = addInTeam(addedPeople, teams[index])
     return [addedPeople, teams]
+}
+
+
+export const sendTeamsDB = (teams) => {
+    request("http://localhost:4000/graphql", EditTeams, { input: teams })
+}
+
+export const deletePeopleOnDB = (people) => {
+    return request("http://localhost:4000/graphql", DeletePeople, { _id: people._id })
 }
 
 const removeInTeam = (people, team) => {
@@ -156,36 +178,4 @@ const addInTeam = (people, team) => {
     else
         team.worker.push(people)
     return team
-}
-
-export const sendTeamsDB = async (teams, peoples) => {
-    teams = teams.map(t => {
-        return { ...t, lead: t.lead?._id, worker: [t.worker?.[0]?._id, t.worker?.[1]?._id], apprentice: t.apprentice?._id }
-    })
-    let { editTeams: editedTeams } = await request("http://localhost:4000/graphql", EditTeams, { input: teams })
-
-    editedTeams = teams.map(team => {
-        console.log(team.lead, peoples.find(people => people._id === team.lead))
-        return {
-            ...team,
-            lead: peoples.find(people => people._id === team.lead),
-            worker: [
-                peoples.find(people => people._id === team.worker?.[0]),
-                peoples.find(people => people._id === team.worker?.[1])
-            ],
-            apprentice: peoples.find(people => people._id === team.apprentice)
-        }
-    })
-
-    const majPeoples = peoples.map(people => {
-        if (people.job === "lead")
-            return people
-        if (people.job === "apprentice")
-            return { ...people, team: editedTeams.find(team => team.apprentice?._id === people._id) }
-        return {
-            ...people,
-            team: editedTeams.find(team => team.worker?.[0]?._id === people._id || team.worker?.[1]?._id === people._id)
-        }
-    })
-    return [editedTeams, majPeoples]
 }

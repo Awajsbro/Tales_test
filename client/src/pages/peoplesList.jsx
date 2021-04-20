@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 
-const PeoplesList = ({ peoples, modalHandler, promotePeople }) => {
+const PeoplesList = ({ peoples, modalHandler, deleteHanlder }) => {
     const [filtedPeoples, setFiltedPeoples] = useState(peoples)
     const [firstNameFilter, setFirstNameFilter] = useState("")
     const [lastNameFilter, setLastNameFilter] = useState("")
@@ -23,9 +23,9 @@ const PeoplesList = ({ peoples, modalHandler, promotePeople }) => {
         }))
     }, [firstNameFilter, lastNameFilter, jobFilter, peoples, haveTeamFilter])
 
-    const sendPromote = (e, people) => {
+    const deletePeople = (e, people) => {
         e.stopPropagation()
-        promotePeople({ ...people, job: people.job === "apprentice" ? "worker" : "lead" })
+        deleteHanlder(people)
     }
 
 
@@ -82,7 +82,7 @@ const PeoplesList = ({ peoples, modalHandler, promotePeople }) => {
             <span>email</span>
             <span>job</span>
             <span>equipe</span>
-            <span>promouvoir</span>
+            <span>renvoyer</span>
         </div>
 
         {filtedPeoples.map((people, i) => {
@@ -97,7 +97,11 @@ const PeoplesList = ({ peoples, modalHandler, promotePeople }) => {
                     <span>{people.job === "lead" ? "lead" : people.job === "worker" ? "collaborateur" : "stagiaire"}</span>
                     <span>{people.team ? "oui" : "non"}</span>
                     <span>
-                        <input type="button" hidden={people.job === "lead"} onClick={e => sendPromote(e, people)} />
+                        <input type="button"
+                            value="X"
+                            className="peoplesListDataDeleteButon"
+                            onClick={e => deletePeople(e, people)}
+                        />
                     </span>
                 </div>
             return null

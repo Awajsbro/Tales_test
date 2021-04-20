@@ -7,8 +7,11 @@ const schema = require("./graphql/schema")
 const resolver = require("./graphql/resolver")
 
 const db = mongoose.connect("mongodb://localhost/Tales_test", { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true })
-    .then(() => console.log("Connected to mongoDB"))
+    .then(() => console.info("Connected to mongoDB"))
     .catch(err => console.error("Failed to connect", err))
+
+mongoose.set('useFindAndModify', false);
+
 
 const app = express()
 app.use(cors())

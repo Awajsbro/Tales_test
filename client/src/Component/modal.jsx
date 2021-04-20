@@ -5,18 +5,23 @@ const Modal = ({ peopleHandler, people }) => {
     const [lastName, setLastName] = useState(people?.lastName ?? "")
     const [email, setEmail] = useState(people?.email ?? "")
     const [job, setJob] = useState(people?.job ?? "apprentice")
+    const [promote, setPromote] = useState(false)
 
 
     const sendPeople = () => {
         if (firstName === "" || lastName === "" || email === "")
             return
 
+        let jobToSet = job
+        if (promote)
+            jobToSet = people.job === "apprentice" ? "worker" : "lead"
+
         peopleHandler({
             ...people,
             firstName,
             lastName,
             email,
-            job,
+            job: jobToSet
         })
     }
 
@@ -59,8 +64,19 @@ const Modal = ({ peopleHandler, people }) => {
             <option value="worker">Collaborateur</option>
             <option value="lead">Lead</option>
         </select>
+
+        {people?._id ? <div className="modalCheckboxWrapper">
+            <span className={people.job === "lead" ? "modalTextPromote" : null}>Promouvoir : </span>
+            <input type="checkbox"
+                value={promote}
+                disabled={people.job === "lead"}
+                onChange={() => setPromote(!promote)}
+            />
+        </div>
+            : null}
+
         <input type="button"
-            value="creer"
+            value={people._id ? "sauvegarder" : "creer"}
             onClick={() => sendPeople()}
             className="modalSendBotton"
         />

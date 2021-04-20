@@ -1,29 +1,62 @@
 import { useState, useEffect } from "react"
 import '../styles/App.css';
 
-function Home({ peoples, teams, teamsHandler }) {
+function Home({ peoples, teams, changeHandler }) {
     const [editedTeams, setEditedTeams] = useState([])
+    const [editedPeoples, setEditedPeoples] = useState([])
 
     useEffect(() => {
         setEditedTeams(teams)
-    }, [teams])
+        setEditedPeoples(peoples)
+    }, [teams, peoples])
 
-    const editTeams = (e, i) => {
-        setEditedTeams(() => {
-            return editedTeams.map((team, index) => {
-                if (i !== index)
-                    return team
-                if (e.target.name === "name")
-                    return { ...team, name: e.target.value }
+    const editTeams = (e, index) => {
+        const teamsToUpdate = JSON.parse(JSON.stringify(editedTeams))
 
-                const targetPeople = peoples.find(people => people._id === e.target.value)
-                if (e.target.name === "worker1")
-                    return { ...team, worker: [targetPeople, team.worker[1]] }
-                if (e.target.name === "workerA")
-                    return { ...team, worker: [team.worker[0], targetPeople] }
-                return { ...team, apprentice: targetPeople }
-            })
-        })
+        if (e.target.name === "name")
+            teamsToUpdate[index].name = e.target.value
+        else {
+            const peoplesToUpdate = JSON.parse(JSON.stringify(editedPeoples))
+            const indexPeopleToAdd = editedPeoples.findIndex(people => people._id === e.target.value)
+            let i
+
+            if (e.target.name === "Stagiaire") {
+                i = peoplesToUpdate.findIndex(people => people._id === editedTeams[index]?.apprentice?._id)
+                teamsToUpdate[index].apprentice = editedPeoples[indexPeopleToAdd]
+            } else if (e.target.name === "Collaborateur 1") {
+                i = peoplesToUpdate.findIndex(people => people._id === editedTeams[index]?.worker?.[0]?._id)
+                teamsToUpdate[index].worker[0] = editedPeoples[indexPeopleToAdd]
+            } else {
+                i = peoplesToUpdate.findIndex(people => people._id === editedTeams[index]?.worker?.[1]?._id)
+                teamsToUpdate[index].worker[1] = editedPeoples[indexPeopleToAdd]
+            }
+
+            if (i >= 0)
+                peoplesToUpdate[i].team = null
+            peoplesToUpdate[indexPeopleToAdd].team = teams[index]
+            setEditedPeoples(peoplesToUpdate)
+        }
+        setEditedTeams(teamsToUpdate)
+    }
+
+    const generateSelect = (name, index, selected, post) => {
+        return <div>
+            <span>{name} : </span>
+            <select name={name}
+                onChange={e => editTeams(e, index)}
+            >
+                <option value={selected?._id}>
+                    {selected ? `${selected.firstName} ${selected.lastName}` : "personne d'assigner a ce poste"}
+                </option>
+                {editedPeoples.map((people, i) => {
+                    if (people.job !== post || people.team?._id)
+                        return null
+                    return <option key={i} value={people._id}>
+                        {`${people.firstName} ${people.lastName}`}
+                    </option>
+                })}
+            </select>
+        </div>
     }
 
     return <div className="mainBody">
@@ -36,62 +69,13 @@ function Home({ peoples, teams, teamsHandler }) {
                     <input name="name" type="text" value={name ?? ""} placeholder={_id} onChange={e => editTeams(e, i)} />
                 </div>
                 <span> Lead : {`${lead?.firstName} ${lead?.lastName}`}</span>
-
-                <div>
-                    <span>Collaborateur 1 : </span>
-                    <select name="worker1"
-                        onChange={e => editTeams(e, i)}
-                    >
-                        <option value={worker?.[0]?._id}>
-                            {worker?.[0] ? `${worker[0].firstName} ${worker[0].lastName}` : "personne d'assigner a ce poste"}
-                        </option>
-                        {peoples.map((people, i) => {
-                            if (people.job !== "worker" || people.team?._id)
-                                return null
-                            return <option key={i} value={people._id}>
-                                {`${people.firstName} ${people.lastName}`}
-                            </option>
-                        })}
-                    </select>
-                </div>
-                <div>
-                    <span>Collaborateur A : </span>
-                    <select name="workerA"
-                        onChange={e => editTeams(e, i)}
-                    >
-                        <option value={worker?.[1]?._id}>
-                            {worker?.[1] ? `${worker[1].firstName} ${worker[1].lastName}` : "personne d'assigner a ce poste"}
-                        </option>
-                        {peoples.map((people, i) => {
-                            if (people.job !== "worker" || people.team?._id)
-                                return null
-                            return <option key={i} value={people._id}>
-                                {`${people.firstName} ${people.lastName}`}
-                            </option>
-                        })}
-                    </select>
-                </div>
-                <div>
-                    <span>Stagiaire : </span>
-                    <select name="apprentice"
-                        onChange={e => editTeams(e, i)}
-                    >
-                        <option value={apprentice?._id}>
-                            {apprentice ? `${apprentice.firstName} ${apprentice.lastName}` : "aucun"}
-                        </option>
-                        {peoples.map((people, i) => {
-                            if (people.job !== "apprentice" || people.team?._id)
-                                return null
-                            return <option key={i} value={people._id}>
-                                {`${people.firstName} ${people.lastName}`}
-                            </option>
-                        })}
-                    </select>
-                </div>
+                {generateSelect("Collaborateur 1", i, worker?.[0], "worker")}
+                {generateSelect("Collaborateur A", i, worker?.[1], "worker")}
+                {generateSelect("Stagiaire", i, apprentice, "apprentice")}
 
             </div>
         })}
-        <input type="button" value="sauvegarder" className="homeSaveButton" onClick={() => teamsHandler(editedTeams)} />
+        <input type="button" value="sauvegarder" className="homeSaveButton" onClick={() => changeHandler(editedTeams, editedPeoples)} />
     </div>
 }
 

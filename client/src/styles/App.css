@@ -94,7 +94,7 @@
 
 .teamCardBody input, .teamCardBody select{
   background-color: transparent;
-  border: none;
+  border: 1px solid #404040;
   color: whitesmoke;
   font-size: large;
   margin: 10px;
@@ -116,6 +116,10 @@
   font-size: large;
   transform: translate(-50%);
   border: none
+}
+
+.homeSaveButton:hover {
+  background-color: #d6d6d6;
 }
 
 /* peoples list */
@@ -170,6 +174,16 @@
   width: 100%;
 }
 
+.peoplesListDataDeleteButon {
+  background-color: darkred;
+  border: 1px solid black;
+}
+
+.peoplesListDataDeleteButon:hover {
+  background-color: red;
+}
+
+
 /* modal */
 .modalBody {
   position: fixed;
@@ -185,7 +199,7 @@
   gap: 10px;
   grid-template-areas:
   "input job"
-  "input ."
+  "input check"
   "input send";
 }
 
@@ -219,6 +233,16 @@
   grid-area: job;
   align-self: end;
   height: 35px;
+}
+
+.modalTextPromote {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.modalCheckboxWrapper{
+  grid-area: check;
+  align-self: center;
 }
 
 .modalSendBotton {

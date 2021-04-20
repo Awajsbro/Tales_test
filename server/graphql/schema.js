@@ -7,15 +7,15 @@ const schema = buildSchema(`
         lastName: String
         email: String
         job: String
-        Team: String
+        team: TeamInput
     }
 
     input TeamInput {
         _id: String
         name: String
-        lead: String
-        worker: [String]
-        apprentice: String
+        lead: PeopleInput
+        worker: [PeopleInput]
+        apprentice: PeopleInput
     }
 
     type People {
@@ -43,9 +43,10 @@ const schema = buildSchema(`
     }
 
     type Mutation {
-        addPeople(firstName: String!, lastName: String!, email: String!, job: String!, team: String): People!
-        editPeople(_id: String!, firstName: String, lastName: String, email: String, job: String, team: String): People!
+        addPeople(input: PeopleInput): People!
+        editPeople(input: PeopleInput): People!
         editTeams(input: [TeamInput]): [Team]
+        deletePeople(_id: String!): [String]
     }
 `)
 

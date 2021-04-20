@@ -6,7 +6,7 @@ import Home from "./pages/home"
 import PeoplesList from "./pages/peoplesList"
 import Modal from "./Component/modal"
 import './styles/App.css';
-import { getInit, sendPeopleDB, sendTeamsDB } from "./util"
+import { deletePeopleOnDB, getInit, sendPeopleDB, sendTeamsDB } from "./util"
 
 
 
@@ -24,9 +24,9 @@ function App() {
   }, [])
 
   const editPeoples = (people) => {
+    console.log(people)
     sendPeopleDB(people, teams).then(ret => {
 
-      console.log(ret[0])
       if (peoples.find(p => p._id === ret[0]._id)) {
         setPeoples(() => peoples.map(p => {
           if (p._id === ret[0]._id)
@@ -42,12 +42,38 @@ function App() {
     setModal(false)
   }
 
-  const editTeams = (teams) => {
-    sendTeamsDB(teams, peoples).then(ret => {
-      console.log(ret, ret[0])
-      setTeams(ret[0])
-      setPeoples(ret[1])
+  const teamsChangeHandler = (teamsChange, peoplesChange) => {
+    setTeams(teamsChange)
+    setPeoples(peoplesChange)
+    sendTeamsDB(teamsChange, peoplesChange)
+  }
+
+  const deletePeopleHandler = async (people) => {
+    const peoplesCpy = JSON.parse(JSON.stringify(peoples))
+    const teamsCpy = JSON.parse(JSON.stringify(teams))
+
+    const { deletePeople: ret } = await deletePeopleOnDB(people)
+
+    ret.forEach(peopleTeamless => {
+      console.log(peopleTeamless)
+      const indexPeople = peoplesCpy.findIndex(peopleCpy => peopleCpy._id === peopleTeamless)
+      peoplesCpy[indexPeople].team = null
     })
+
+    if (people.team) {
+      const indexTeam = teamsCpy.findIndex(teamCpy => teamCpy._id === people.team._id)
+      if (people.job === "apprentice")
+        teamsCpy[indexTeam].apprentice = null
+      else if (people.job === "worker")
+        teamsCpy[indexTeam].worker = teamsCpy[indexTeam].worker.filter(worker => worker._id !== people._id)
+      else
+        teamsCpy.splice(indexTeam, 1)
+      setTeams(teamsCpy)
+    }
+
+    const indexPeople = peoplesCpy.findIndex(peopleCpy => peopleCpy._id === people._id)
+    peoplesCpy.splice(indexPeople, 1)
+    setPeoples(peoplesCpy)
   }
 
   return (
@@ -61,8 +87,8 @@ function App() {
           <SideBar />
 
           <Switch>
-            <Route exact path="/"><Home peoples={peoples} teams={teams} teamsHandler={editTeams} /></Route>
-            <Route path="/peoples"><PeoplesList peoples={peoples} modalHandler={setModal} promotePeople={editPeoples} /></Route>
+            <Route exact path="/"><Home peoples={peoples} teams={teams} changeHandler={teamsChangeHandler} /></Route>
+            <Route path="/peoples"><PeoplesList peoples={peoples} modalHandler={setModal} deleteHanlder={deletePeopleHandler} /></Route>
             {/* <Route path="/reorder"><ReorderTeams /></Route> */}
           </Switch>
         </div>
